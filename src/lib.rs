@@ -1468,6 +1468,28 @@ impl Element {
             .and_then(move |(c, v)| c.parse_lookup(v).map(move |e| Element { c, e }))
             .and_then(move |e| e.click())
     }
+
+    /// Send [typeable](https://www.w3.org/TR/webdriver/#dfn-typeable) keys to an element.
+    ///
+    /// The null key (`U+E000`) and modifier keys are not yet supported.
+    pub fn send_keys(
+        self,
+        keys: &str
+    ) -> impl Future<Item = Client, Error = error::CmdError> {
+        let cmd = WebDriverCommand::ElementSendKeys(self.e, webdriver::command::SendKeysParameters {
+            text: keys.into(),
+        });
+
+        self.c
+            .issue_wd_cmd(cmd)
+            .and_then(|(this, res)| {
+                if res.is_null() {
+                    Ok(this)
+                } else {
+                    Err(error::CmdError::NotW3C(res))
+                }
+            })
+    }
 }
 
 impl rustc_serialize::json::ToJson for Element {
